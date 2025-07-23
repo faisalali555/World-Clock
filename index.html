@@ -187,13 +187,13 @@
         </header>
 
         <main>
-            <!-- World Clocks Panel (FULL WIDTH) -->
+            <!-- World Clocks Panel -->
             <section class="glass-panel">
                 <h2 class="panel-title">World Clocks</h2>
                 <div id="city-clocks-grid" class="clock-grid"></div>
             </section>
 
-            <!-- Live Time Comparison Panel (FULL WIDTH) -->
+            <!-- Live Time Comparison Panel -->
             <section class="glass-panel">
                 <h2 class="panel-title">Live City Time Comparison</h2>
                 <div class="live-converter-grid">
@@ -209,7 +209,7 @@
                 </div>
             </section>
 
-            <!-- Live Timezones Panel (FULL WIDTH) -->
+            <!-- Live Timezones Panel -->
             <section class="glass-panel">
                 <h2 class="panel-title">Live Timezones</h2>
                 <div id="timezone-clocks-grid" class="clock-grid"></div>
@@ -223,7 +223,10 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- DATA ---
             const cities = [
+                // Added Lahore as requested
+                { name: 'Lahore', country: 'Pakistan', timezone: 'Asia/Karachi' },
                 { name: 'Karachi', country: 'Pakistan', timezone: 'Asia/Karachi' },
                 { name: 'New York', country: 'USA', timezone: 'America/New_York' },
                 { name: 'London', country: 'UK', timezone: 'Europe/London' },
@@ -235,21 +238,6 @@
                 { name: 'Los Angeles', country: 'USA', timezone: 'America/Los_Angeles' },
                 { name: 'Moscow', country: 'Russia', timezone: 'Europe/Moscow' },
                 { name: 'Beijing', country: 'China', timezone: 'Asia/Shanghai' },
-                { name: 'Toronto', country: 'Canada', timezone: 'America/Toronto' },
-                { name: 'Istanbul', country: 'Turkey', timezone: 'Europe/Istanbul' },
-                { name: 'Cairo', country: 'Egypt', timezone: 'Africa/Cairo' },
-                { name: 'Rio de Janeiro', country: 'Brazil', timezone: 'America/Sao_Paulo' },
-                { name: 'Berlin', country: 'Germany', timezone: 'Europe/Berlin' },
-                { name: 'Rome', country: 'Italy', timezone: 'Europe/Rome' },
-                { name: 'Seoul', country: 'South Korea', timezone: 'Asia/Seoul' },
-                { name: 'Jakarta', country: 'Indonesia', timezone: 'Asia/Jakarta' },
-                { name: 'Mexico City', country: 'Mexico', timezone: 'America/Mexico_City' },
-                { name: 'Sao Paulo', country: 'Brazil', timezone: 'America/Sao_Paulo' },
-                { name: 'Amsterdam', country: 'Netherlands', timezone: 'Europe/Amsterdam' },
-                { name: 'Riyadh', country: 'Saudi Arabia', timezone: 'Asia/Riyadh' },
-                { name: 'Chicago', country: 'USA', timezone: 'America/Chicago' },
-                { name: 'Lagos', country: 'Nigeria', timezone: 'Africa/Lagos' },
-                { name: 'Buenos Aires', country: 'Argentina', timezone: 'America/Argentina/Buenos_Aires' },
             ];
 
             const timezones = [
@@ -266,16 +254,40 @@
                 { name: 'GST', long: 'Gulf Standard Time', timezone: 'Asia/Dubai' },
                 { name: 'SGT', long: 'Singapore Time', timezone: 'Asia/Singapore' },
             ];
-
-            const staticCitiesForGrid = cities.slice(0, 12);
             
+            // A comprehensive list for the dropdowns, sorted alphabetically.
+            const allCitiesForConverter = [
+                ...cities,
+                // Add more cities here if you want them in the converter but not on the main grid
+                { name: 'Toronto', country: 'Canada', timezone: 'America/Toronto' },
+                { name: 'Istanbul', country: 'Turkey', timezone: 'Europe/Istanbul' },
+                { name: 'Cairo', country: 'Egypt', timezone: 'Africa/Cairo' },
+                { name: 'Rio de Janeiro', country: 'Brazil', timezone: 'America/Sao_Paulo' },
+                { name: 'Berlin', country: 'Germany', timezone: 'Europe/Berlin' },
+                { name: 'Rome', country: 'Italy', timezone: 'Europe/Rome' },
+                { name: 'Seoul', country: 'South Korea', timezone: 'Asia/Seoul' },
+                { name: 'Jakarta', country: 'Indonesia', timezone: 'Asia/Jakarta' },
+                { name: 'Mexico City', country: 'Mexico', timezone: 'America/Mexico_City' },
+                { name: 'Sao Paulo', country: 'Brazil', timezone: 'America/Sao_Paulo' },
+                { name: 'Amsterdam', country: 'Netherlands', timezone: 'Europe/Amsterdam' },
+                { name: 'Riyadh', country: 'Saudi Arabia', timezone: 'Asia/Riyadh' },
+                { name: 'Chicago', country: 'USA', timezone: 'America/Chicago' },
+                { name: 'Lagos', country: 'Nigeria', timezone: 'Africa/Lagos' },
+                { name: 'Buenos Aires', country: 'Argentina', timezone: 'America/Argentina/Buenos_Aires' },
+            ].sort((a, b) => a.name.localeCompare(b.name));
+
+            // --- DOM ELEMENTS ---
             const cityClocksGrid = document.getElementById('city-clocks-grid');
             const timezoneClocksGrid = document.getElementById('timezone-clocks-grid');
             const citySelect1 = document.getElementById('city-select-1');
             const citySelect2 = document.getElementById('city-select-2');
             const liveDisplay1 = document.getElementById('live-display-1');
             const liveDisplay2 = document.getElementById('live-display-2');
+            
+            // --- OPTIMIZATION: Store references to clock elements ---
+            let clockElements = [];
 
+            // --- FUNCTIONS ---
             function getTimeOfDay(hour) {
                 if (hour >= 5 && hour < 12) return "Morning";
                 if (hour >= 12 && hour < 17) return "Afternoon";
@@ -283,55 +295,83 @@
                 return "Night";
             }
             
-            function setupStaticClocks() {
-                staticCitiesForGrid.forEach(city => {
+            /**
+             * Creates the clock cards and stores their DOM element references for efficient updates.
+             * This function runs only once on page load.
+             */
+            function setupClocks() {
+                // Create City Clocks
+                cities.forEach(city => {
                     const card = document.createElement('div');
                     card.className = 'clock-card';
-                    const cityId = city.name.replace(/\s+/g, '').replace(/\./g, '');
-                    card.innerHTML = `<div class="name">${city.name}</div><div class="country">${city.country}</div><div class="time" id="time-${cityId}"></div><div class="date" id="date-${cityId}"></div><div class="time-of-day" id="tod-${cityId}"></div>`;
                     cityClocksGrid.appendChild(card);
+                    
+                    // Store references to the elements that will be updated
+                    const timeEl = document.createElement('div');
+                    timeEl.className = 'time';
+                    const dateEl = document.createElement('div');
+                    dateEl.className = 'date';
+                    const todEl = document.createElement('div');
+                    todEl.className = 'time-of-day';
+
+                    card.innerHTML = `<div class="name">${city.name}</div><div class="country">${city.country}</div>`;
+                    card.appendChild(timeEl);
+                    card.appendChild(dateEl);
+                    card.appendChild(todEl);
+
+                    clockElements.push({
+                        timezone: city.timezone,
+                        timeEl: timeEl,
+                        dateEl: dateEl,
+                        todEl: todEl,
+                        // OPTIMIZATION: Standardized date format
+                        dateFormat: 'dddd, MMM D, YYYY' 
+                    });
                 });
 
+                // Create Timezone Clocks
                 timezones.forEach(tz => {
                     const card = document.createElement('div');
                     card.className = 'clock-card';
-                    const tzId = tz.name.replace(/\s+/g, '').replace(/\./g, '');
-                    card.innerHTML = `<div class="name">${tz.name}</div><div class="tz-name">${tz.long}</div><div class="time" id="time-${tzId}"></div><div class="date" id="date-${tzId}"></div><div class="time-of-day" id="tod-${tzId}"></div>`;
                     timezoneClocksGrid.appendChild(card);
+                    
+                    const timeEl = document.createElement('div');
+                    timeEl.className = 'time';
+                    const dateEl = document.createElement('div');
+                    dateEl.className = 'date';
+                    const todEl = document.createElement('div');
+                    todEl.className = 'time-of-day';
+
+                    card.innerHTML = `<div class="name">${tz.name}</div><div class="tz-name">${tz.long}</div>`;
+                    card.appendChild(timeEl);
+                    card.appendChild(dateEl);
+                    card.appendChild(todEl);
+
+                    clockElements.push({
+                        timezone: tz.timezone,
+                        timeEl: timeEl,
+                        dateEl: dateEl,
+                        todEl: todEl,
+                        dateFormat: 'MMM D, YYYY'
+                    });
                 });
             }
 
-            function updateStaticClocks() {
-                staticCitiesForGrid.forEach(city => {
-                    const cityId = city.name.replace(/\s+/g, '').replace(/\./g, '');
-                    const timeEl = document.getElementById(`time-${cityId}`);
-                    const dateEl = document.getElementById(`date-${cityId}`);
-                    const todEl = document.getElementById(`tod-${cityId}`);
-                    if (timeEl && dateEl && todEl) {
-                        const now = moment().tz(city.timezone);
-                        timeEl.textContent = now.format('hh:mm:ss A');
-                        dateEl.textContent = now.format('dddd, MMM D');
-                        todEl.textContent = getTimeOfDay(now.hour());
-                    }
-                });
-                
-                timezones.forEach(tz => {
-                    const tzId = tz.name.replace(/\s+/g, '').replace(/\./g, '');
-                    const timeEl = document.getElementById(`time-${tzId}`);
-                    const dateEl = document.getElementById(`date-${tzId}`);
-                    const todEl = document.getElementById(`tod-${tzId}`);
-                     if (timeEl && dateEl && todEl) {
-                        const now = moment().tz(tz.timezone);
-                        timeEl.textContent = now.format('hh:mm:ss A');
-                        dateEl.textContent = now.format('MMM D, YYYY');
-                        todEl.textContent = getTimeOfDay(now.hour());
-                    }
+            /**
+             * Updates the text content of the stored clock elements.
+             * This is the only function that runs inside the interval, making it very fast.
+             */
+            function updateClocks() {
+                clockElements.forEach(clock => {
+                    const now = moment().tz(clock.timezone);
+                    clock.timeEl.textContent = now.format('hh:mm:ss A');
+                    clock.dateEl.textContent = now.format(clock.dateFormat);
+                    clock.todEl.textContent = getTimeOfDay(now.hour());
                 });
             }
             
             function setupLiveConverter() {
-                const allCitiesSorted = [...cities].sort((a, b) => a.name.localeCompare(b.name));
-                allCitiesSorted.forEach((city) => {
+                allCitiesForConverter.forEach((city) => {
                     const option1 = document.createElement('option');
                     option1.value = city.timezone;
                     option1.textContent = `${city.name}, ${city.country}`;
@@ -353,28 +393,32 @@
                 const tz1 = citySelect1.value;
                 const tz2 = citySelect2.value;
 
-                const allCities = [...cities];
-
+                const cityInfo1 = allCitiesForConverter.find(c => c.timezone === tz1);
                 const now1 = moment().tz(tz1);
-                const cityInfo1 = allCities.find(c => c.timezone === tz1);
                 liveDisplay1.innerHTML = `<div class="name">${cityInfo1.name}</div><div class="time">${now1.format('hh:mm A')}</div><div class="date">${now1.format('dddd, MMM D')}</div><div class="time-of-day">${getTimeOfDay(now1.hour())}</div>`;
 
+                const cityInfo2 = allCitiesForConverter.find(c => c.timezone === tz2);
                 const now2 = moment().tz(tz2);
-                const cityInfo2 = allCities.find(c => c.timezone === tz2);
                 liveDisplay2.innerHTML = `<div class="name">${cityInfo2.name}</div><div class="time">${now2.format('hh:mm A')}</div><div class="date">${now2.format('dddd, MMM D')}</div><div class="time-of-day">${getTimeOfDay(now2.hour())}</div>`;
             }
 
-            // Initialize App
-            setupStaticClocks();
-            setupLiveConverter();
-            
-            function updateAll() {
-                updateStaticClocks();
+            // --- INITIALIZE APP ---
+            function initialize() {
+                setupClocks();
+                setupLiveConverter();
+                
+                // Run updates once immediately
+                updateClocks();
                 updateLiveConverter();
+                
+                // Set interval for all subsequent updates
+                setInterval(() => {
+                    updateClocks();
+                    updateLiveConverter();
+                }, 1000);
             }
-            
-            updateAll();
-            setInterval(updateAll, 1000);
+
+            initialize();
         });
     </script>
 </body>
